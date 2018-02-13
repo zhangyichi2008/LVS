@@ -14,9 +14,9 @@ class lvsadd:
         self.today = time.strftime("%Y%m%d%H%M%S",time.localtime(time.time()))
 
     def _backup(self):
-        self.file1 = "lvs.conf.%s" %self.today
-        self.file2 = "lvs.conf.%s" %self.user 
-        self.cp_cmd = """ cp lvs.conf  %s ; cp -a lvs.conf  %s """ % (self.file1,self.file2)
+        self.file1 = "/etc/keepalived/lvs.conf.%s" %self.today
+        self.file2 = "/etc/keepalived/lvs.conf.%s" %self.user 
+        self.cp_cmd = """ cp /etc/keepalived/lvs.conf  %s ; cp -a /etc/keepalived/lvs.conf  %s """ % (self.file1,self.file2)
         self.bak_pro = subprocess.Popen(self.cp_cmd,shell=True,stderr=subprocess.PIPE)
         if  self.bak_pro.stderr.read():
             print 'lvs conf backup fail!!!'
@@ -124,7 +124,7 @@ class lvsadd:
         self._conftmp3()
 
     def _addconf(self):
-        self.get_line_cmd = """ wc -l lvs.conf.%s |awk '{print $1}' """ % (self.user)
+        self.get_line_cmd = """ wc -l /etc/keepalived/lvs.conf.%s |awk '{print $1}' """ % (self.user)
         try:
             self.line_pro = subprocess.Popen(self.get_line_cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             self.line_pro2 = int(self.line_pro.stdout.read())+2
@@ -147,7 +147,7 @@ class lvsadd:
            sys.exit()
 
     def _diffconf(self):
-        self.diff_cmd = """ diff -c lvs.conf lvs.conf.%s |grep "^+" """ % (self.user)
+        self.diff_cmd = """ diff -c /etc/keepalived/lvs.conf /etc/keepalived/lvs.conf.%s |grep "^+" """ % (self.user)
         self.diff_pro = subprocess.Popen(self.diff_cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if  self.diff_pro.stderr.read():
             print 'please check conf !!!'
@@ -156,7 +156,7 @@ class lvsadd:
             print 'Add Conf Show: \n'+self.diff_pro.stdout.read()
 
     def _save(self):
-        self.save_cmd = """ cp -a lvs.conf.%s lvs.conf """ % (self.user)
+        self.save_cmd = """ cp -a /etc/keepalived/lvs.conf.%s /etc/keepalived/lvs.conf """ % (self.user)
         self.kill_cmd = """ kill -HUP `cat /var/run/checkers.pid` """ 
         self.save_pro = subprocess.Popen(self.save_cmd,shell=True,stderr=subprocess.PIPE)
         if  self.save_pro.stderr.read():
@@ -172,7 +172,7 @@ class lvsadd:
                 print 'kill -HUP checkers.pid sucess !'
 
     def _useage(self):
-        print  "vip_lvs.py -v vip  -r rsip  -p port  -u user -m mode -n RTnumber or vip_lvs.py -s conf -u user"
+        print  "eg: vip_lvs.py -v 1.1.1.1 -r 172.16.1.2,172.16.1.3 -p 80 -u yichi -m dr -n 922203  eg: vip_lvs.py -s conf -u yichi"
         print  "-v  Vip"
         print  "-r  Need to add a new IP in the configuration file ,you can -r ip1,ip2,ip3... "
         print  "-p  Port "

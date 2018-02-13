@@ -128,51 +128,58 @@ class lvs:
 
     def _delconftmp(self,rsip,port):
         fi=open(self.file2,"r")
-        content = fi.read()
+        conf = fi.read()
         fi.close()
 
-        re_tmp = """^virtual_server\s*%s\s*%s\s""" % (self.vip,self.port)
-        pattern = re.compile(re_tmp,re.M)
-        v = pattern.findall(content)
-        if len(v)==1:
+        re_vs = """^virtual_server\s*%s\s*%s\s""" % (self.vip,self.port)
+        pattern_vs = re.compile(re_vs,re.M)
+        vs_name_up = pattern_vs.findall(conf)
+        if len(vs_name_up) == 1:
             pass
         else :
             print 'vip or port invalid'
             sys.exit()
-        pos1 = content.find(v[0])
-        if pos1==-1:
+        pos_vs_start = conf.find(vs_name_up[0])
+        if pos_vs_start == -1:
             print "Not find vip and port in the lvs conf,please check again!"
             sys.exit()
-        v2 = "virtual_server"
-        pos2 = content[pos1:].find(v2,2)
-        content_v =  content[pos1:][:pos2]
+        vs_name_down = "virtual_server"
+        pos_vs_end = conf[pos_vs_start:].find(vs_name_down,2)
+        conf_vs =  conf[pos_vs_start:][:pos_vs_end]
 
-        re_rs_tmp = """^#\s*real_server\s*%s\s*%s\s""" % (rsip,port)
-        pattern2 = re.compile(re_rs_tmp,re.M)
-        rs = pattern2.findall(content_v)
-        if rs:
+        re_rs_fail = """\s*#+\s*#*real_server\s*%s\s*%s\s""" % (rsip,port)
+        pattern_rs_fail = re.compile(re_rs_fail,re.M)
+        rs_name_fail = pattern_rs_fail.findall(conf_vs)
+        if rs_name_fail:
             print "please check '#'"+rsip+" in che conf "
             sys.exit()
 
-        re_rs_tmp2 = """real_server\s*%s\s*%s\s""" % (rsip,port)
-        pattern3 = re.compile(re_rs_tmp2,re.M)
-        rs2 = pattern3.findall(content_v)
-        if len(rs2)==1:
+        re_rs = """real_server\s*%s\s*%s\s""" % (rsip,port)
+        pattern_rs = re.compile(re_rs,re.M)
+        rs_name_up = pattern_rs.findall(conf_vs)
+        if len(rs_name_up) == 1:
             pass
         else :
             print "Not find "+rsip+" in the lvs conf,please check again!"
             sys.exit()
-        pos3 = content_v.find(rs2[0])
-        if pos3==-1:
+        pos_rs_start = conf_vs.find(rs_name_up[0])
+        if pos_rs_start == -1:
             print "Not find "+rsip+" in the lvs conf,please check again!"
             sys.exit()
-        rs3 = "real_server"
-        pos4 = content_v[pos3:].find(rs3,2)
-        content_v2 = content_v[:pos3]+content_v[pos3:][pos4:]
-        content = content[:pos1]+content_v2+content[pos1:][pos2:]
+
+        rs_name_down = "real_server"
+        pos_rs_end = conf_vs[pos_rs_start:].find(rs_name_down,2)
+        if pos_rs_end == -1:
+            re_tmp = "}"
+            pos_rs_end = conf_vs[pos_rs_start:].rfind(re_tmp)
+            conf_vs_new = conf_vs[:pos_rs_start].rstrip(' |\t')+conf_vs[pos_rs_start:][pos_rs_end:]
+            conf = conf[:pos_vs_start]+conf_vs_new+conf[pos_vs_start:][pos_vs_end:]
+        else : 
+            conf_vs_new = conf_vs[:pos_rs_start]+conf_vs[pos_rs_start:][pos_rs_end:]
+            conf = conf[:pos_vs_start]+conf_vs_new+conf[pos_vs_start:][pos_vs_end:]
 
         fi=open(self.file2,"wb+")
-        fi.write(content.replace('\r\r\n', os.linesep))
+        fi.write(conf.replace('\r\r\n', os.linesep))
         fi.close()
 
     def _delconf(self):
@@ -182,7 +189,8 @@ class lvs:
         self._diffconf()
 
     def _useage(self):
-        print  "eg: member_lvs.py -c add -v 1.1.1.1 -r 172.16.1.2,172.16.1.3 -p 80 -u yichi or member_lvs.py -s conf -u yichi"
+        print  "eg: member_lvs.py -c add -v 1.1.1.1 -r 172.16.1.2,172.16.1.3 -p 80 -u yichi   eg: member_lvs.py -s conf -u yichi"
+        print  "eg: member_lvs.py -c del -v 1.1.1.1 -r 192.168.2.2 -p 80 -u yichi             eg: member_lvs.py -s conf -u yichi"
         print  "-c  add or del"
         print  "-v  vip"
         print  "-r  need to add a new rs in the configuration file ,you can -r ip1,ip2,ip3... "
